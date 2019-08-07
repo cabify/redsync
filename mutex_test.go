@@ -1,6 +1,7 @@
 package redsync
 
 import (
+	"context"
 	"errors"
 	"strconv"
 	"testing"
@@ -145,7 +146,7 @@ func newMockPools(n int) []Pool {
 func getPoolValues(pools []Pool, name string) []string {
 	values := []string{}
 	for _, pool := range pools {
-		conn := pool.Get()
+		conn, _ := pool.GetContext(context.Background())
 		value, err := redis.String(conn.Do("GET", name))
 		conn.Close()
 		if err != nil && err != redis.ErrNil {
@@ -159,7 +160,7 @@ func getPoolValues(pools []Pool, name string) []string {
 func getPoolExpiries(pools []Pool, name string) []int {
 	expiries := []int{}
 	for _, pool := range pools {
-		conn := pool.Get()
+		conn, _ := pool.GetContext(context.Background())
 		expiry, err := redis.Int(conn.Do("PTTL", name))
 		conn.Close()
 		if err != nil && err != redis.ErrNil {
@@ -177,7 +178,7 @@ func clogPools(pools []Pool, mask int, mutex *Mutex) int {
 			n++
 			continue
 		}
-		conn := pool.Get()
+		conn, _ := pool.GetContext(context.Background())
 		_, err := conn.Do("SET", mutex.name, "foobar")
 		conn.Close()
 		if err != nil {
