@@ -92,7 +92,7 @@ func TestMutexQuorumWithMinorityError(t *testing.T) {
 		return nil, errors.New("test")
 	}
 
-	mutexes := newTestMutexes(pools, "test-mutex", 1)
+	mutexes := newTestMutexes(pools, "test-mutex-minority", 1)
 	mutex := mutexes[0]
 	mutex.tries = 1
 
