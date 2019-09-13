@@ -103,7 +103,7 @@ func TestMutexTakenWithMinorityError(t *testing.T) {
 	err := mutex.Lock()
 
 	if err != ErrTaken {
-		t.Fatalf("Expected nil, got %q", err)
+		t.Fatalf("Expected ErrTaken, got %q", err)
 	}
 }
 
