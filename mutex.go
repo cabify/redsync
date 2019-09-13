@@ -192,6 +192,7 @@ func (m *Mutex) actOnPoolsAsync(actFn func(Pool) (bool, error)) (ok int, err err
 	}
 
 	var errs []error
+	taken := 0
 	hasRedisErrors := false
 
 	for range m.pools {
@@ -200,6 +201,7 @@ func (m *Mutex) actOnPoolsAsync(actFn func(Pool) (bool, error)) (ok int, err err
 			hasRedisErrors = true
 			errs = append(errs, RedisError{Node: resp.node, Err: err})
 		} else if !resp.ok {
+			taken++
 			errs = append(errs, NodeTaken{Node: resp.node})
 		} else {
 			ok++
@@ -207,6 +209,10 @@ func (m *Mutex) actOnPoolsAsync(actFn func(Pool) (bool, error)) (ok int, err err
 	}
 
 	if !hasRedisErrors && len(errs) > 0 {
+		return ok, ErrTaken
+	}
+
+	if taken >= m.quorum {
 		return ok, ErrTaken
 	}
 

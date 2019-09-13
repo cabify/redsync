@@ -84,21 +84,25 @@ func TestMutexQuorum(t *testing.T) {
 	}
 }
 
-func TestMutexQuorumWithMinorityError(t *testing.T) {
-	pools := newMockPools(4)
+func TestMutexTakenWithMinorityError(t *testing.T) {
+	pools := newMockPools(3)
 
-	// Node 1 provokes a RedisError.
-	pools[1].(*redis.Pool).Dial = func() (redis.Conn, error) {
-		return nil, errors.New("test")
+	// Node 3 provokes a RedisError.
+	pools[2].(*redis.Pool).Dial = func() (redis.Conn, error) {
+		return nil, errors.New("i/o timeout")
 	}
 
 	mutexes := newTestMutexes(pools, "test-mutex-minority", 1)
 	mutex := mutexes[0]
+
+	// nodes 1 and 2 provoke an ErrTaken
+	clogPools(pools, 1, mutex)
+	clogPools(pools, 2, mutex)
 	mutex.tries = 1
 
 	err := mutex.Lock()
 
-	if err != nil {
+	if err != ErrTaken {
 		t.Fatalf("Expected nil, got %q", err)
 	}
 }
