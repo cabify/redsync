@@ -143,6 +143,27 @@ func TestMutexNoQuorum(t *testing.T) {
 	}
 }
 
+type mockPool struct{}
+
+func (m mockPool) GetContext(ctx context.Context) (redis.Conn, error) {
+	return nil, errors.New("test")
+}
+
+func TestMutexNotPanicOnLock(t *testing.T) {
+	pools := []Pool{mockPool{}}
+
+	mutexes := newTestMutexes(pools, "test-mutex", 1)
+	mutex := mutexes[0]
+	mutex.tries = 1
+
+	err := mutex.Lock()
+
+	redisErr, ok := err.(RedisError)
+	if ok {
+		t.Fatalf("Expected to receive error, instead got %s", redisErr)
+	}
+}
+
 func newMockPools(n int) []Pool {
 	pools := []Pool{}
 	for _, server := range servers {
